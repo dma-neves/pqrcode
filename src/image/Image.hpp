@@ -1,10 +1,17 @@
 #ifndef IMAGE_HPP
 #define IMAGE_HPP
 
+#include <cstring>
+
+#define COMP_MAX_VAL 255
+#define N_COMP_VALS 256
+
+typedef unsigned char pcomp; // Pixel RGB component data type
+
 struct Pixel
 {
 public:
-    unsigned char r,g,b;
+    pcomp r,g,b;
 };
 
 class Image
@@ -28,6 +35,13 @@ public:
             delete pixels[y];
 
         delete pixels;
+    }
+
+    Image* copy()
+    {
+        Image* imgCopy = new Image(width, height);
+        std::memcpy(imgCopy->pixels, pixels, sizeof(Pixel)*width*height);
+        return imgCopy;
     }
 };
 

@@ -10,6 +10,7 @@
 class PNGHandler : public ImageHandler
 {
 private:
+
     int width, height;
     png_byte color_type;
     png_byte bit_depth;
@@ -34,8 +35,6 @@ public:
 
     Image* readImage(char* file)
     {
-
-
         // open file and test if png
         unsigned char header[8];
         FILE *fp = fopen(file, "rb");
@@ -72,7 +71,6 @@ public:
         png_read_update_info(png_ptr, info_ptr);
 
         // Read file
-                /* read file */
         if (setjmp(png_jmpbuf(png_ptr)))
             throw FAILED_TO_READ_FILE_EXCEPTION;
 
@@ -109,8 +107,6 @@ public:
             {
                 png_byte* ptr = &(row[x*nchan]);
 
-                //printf("Pixel at position [ %d - %d ] has RGBA values: %d - %d - %d - %d\n", x, y, ptr[0], ptr[1], ptr[2], ptr[3]);
-
                 img->pixels[y][x].r = ptr[0];
                 img->pixels[y][x].g = ptr[1];
                 img->pixels[y][x].b = ptr[2];
@@ -124,13 +120,12 @@ public:
 
     void writeImage(Image* image, char* file)
     {
-        /* create file */
         FILE *fp = fopen(file, "wb");
         if (!fp)
             throw UNABLE_TO_OPEN_FILE_EXCEPTION;
 
 
-        /* initialize stuff */
+        // init
         png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
         if (!png_ptr)
@@ -146,7 +141,7 @@ public:
         png_init_io(png_ptr, fp);
 
 
-        /* write header */
+        // write header
         if (setjmp(png_jmpbuf(png_ptr)))
             throw FAILED_TO_WRITE_FILE_EXCEPTION;
 
@@ -157,11 +152,11 @@ public:
         png_write_info(png_ptr, info_ptr);
 
 
-        /* write bytes */
+        // write bytes
         if (setjmp(png_jmpbuf(png_ptr)))
             throw FAILED_TO_WRITE_FILE_EXCEPTION;
 
-        // Convert to  png_bytep
+        // copy image to row_pointers
 
         for (int y = 0; y < height; y++)
         {
