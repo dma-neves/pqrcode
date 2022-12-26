@@ -1,4 +1,5 @@
 #include "ImageProcessor.hpp"
+#include "../utils/Utils.hpp"
 
 #include <math.h>
 
@@ -42,7 +43,7 @@ void ImageProcessor::convertToBW(Image *img, pcomp threshold)
 pcomp ImageProcessor::getOtsuTheshold(Image *img)
 {
     std::array<int, N_COMP_VALS> hist = histogramGray(img);
-    int total_sum = hist.size();
+    int total_sum = Utils::sumArrayValues<int, N_COMP_VALS>(hist);
 
     int best_t = 0;
     double best_var = 0;
@@ -97,4 +98,70 @@ std::array<int, N_COMP_VALS> ImageProcessor::histogramGray(Image* img)
     }
 
     return hist;
+}
+
+void ImageProcessor::rotationAroundPoint(Image* img, Image* copy, double angle, Vector2D center)
+{
+    int origin_x, origin_y;
+    double cos_theta = cos(angle);
+    double sin_theta = sin(angle);
+
+    for(int y = 0; y < img->height; y++)
+    {
+        for(int x = 0; x < img->width; x++)
+        {
+            img->pixels[y][x].r = 0;
+            img->pixels[y][x].g = 0;
+            img->pixels[y][x].b = 0;
+
+            origin_x = (int)round((x - center.x) * cos_theta - (center.y - y) * sin_theta + center.x);
+            origin_y = (int)round(center.y - (x - center.x) * sin_theta - (center.y - y) * cos_theta);
+
+            if (origin_x >= 0 && origin_x < img->width && origin_y >= 0 && origin_y < img->height)
+            {
+                img->pixels[y][x].r = copy->pixels[origin_y][origin_x].r;
+                img->pixels[y][x].g = copy->pixels[origin_y][origin_x].g;
+                img->pixels[y][x].b = copy->pixels[origin_y][origin_x].b;
+
+            }
+            else
+            {
+                img->pixels[y][x].r = 0;
+                img->pixels[y][x].g = 0;
+                img->pixels[y][x].b = 0;
+            }
+        }
+    }
+}
+
+void ImageProcessor::shear(Image* img, Image* copy, double x_shear, double y_shear)
+{
+    int origin_x, origin_y;
+
+    for(int y = 0; y < img->height; y++)
+    {
+        for(int x = 0; x < img->width; x++)
+        {
+            img->pixels[y][x].r = 0;
+            img->pixels[y][x].g = 0;
+            img->pixels[y][x].b = 0;
+
+            origin_x = (int)round(x - x_shear*y);
+            origin_y = (int)round(y - y_shear*x);
+
+            if (origin_x >= 0 && origin_x < img->width && origin_y >= 0 && origin_y < img->height)
+            {
+                img->pixels[y][x].r = copy->pixels[origin_y][origin_x].r;
+                img->pixels[y][x].g = copy->pixels[origin_y][origin_x].g;
+                img->pixels[y][x].b = copy->pixels[origin_y][origin_x].b;
+
+            }
+            else
+            {
+                img->pixels[y][x].r = 0;
+                img->pixels[y][x].g = 0;
+                img->pixels[y][x].b = 0;
+            }
+        }
+    }
 }

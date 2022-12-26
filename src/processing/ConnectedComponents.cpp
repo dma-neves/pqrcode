@@ -1,19 +1,51 @@
 #include "ConnectedComponents.hpp"
 
-#include <list>
+#include <vector>
+#include <map>
+#include <string>
+#include <iostream>
+#include <math.h>
 
 #include "../utils/Utils.hpp"
 
-Labels ConnectedComponents::getLabels(Image* img)
+void ConnectedComponents::printLabels(Labels* labels)
+{
+    /*
+    * DEBUG
+    */
+
+    for (int y = 0; y < labels->height; y++)
+    {
+        for (int x = 0; x < labels->width; x++)
+        {
+            std::string labelStr = std::to_string(labels->labels[y][x]);
+
+            if (labels->labels[y][x] == -1)
+                labelStr = " ";
+
+            int nwp = (3 - labelStr.length());
+
+            for (int i = 0; i < nwp; i++)
+                std::cout << " ";
+
+           std::cout << labelStr << " ";
+
+        }
+        std::cout << std::endl;
+    }
+
+}
+
+Labels* ConnectedComponents::getLabels(Image* img)
 {
     int x, y;
     int width = img->width;
     int height = img->height;
 
     int label = 1, neighbourLabel;
-    Labels labels(width, height);
+    Labels* labels = new Labels(width, height);
 
-    std::list<std::list<int>> adjacencies;
+    std::vector<std::vector<int>> adjacencies;
 
     // TODO: don't need to set initial labels -> improve performance
 
@@ -22,33 +54,35 @@ Labels ConnectedComponents::getLabels(Image* img)
         for (x = 0; x < width; x++)
         {
             if(img->pixels[y][x].r == 0)
-                labels.labels[y][x] = label++;
+                labels->labels[y][x] = label++;
             else
-                labels.labels[y][x] = -1;
+                labels->labels[y][x] = -1;
         }
     }
+
+    // Update labels and save adjacencies
 
     for (y = 0; y < height; y++)
     {
         for (x = 0; x < width; x++)
         {
-            int initialLabelValue = labels.labels[y][x];
+            int initialLabelValue = labels->labels[y][x];
             if (initialLabelValue != -1)
             {
-                std::list<int> candidates;
+                std::vector<int> candidates;
                 for (int yoffset = (y == 0 ? 0 : -1); yoffset <= (y == height - 1 ? 0 : 1); yoffset++)
                 {
                     for (int xoffset = (x == 0 ? 0 : -1); xoffset <= (x == width - 1 ? 0 : 1); xoffset++)
                     {
-                        neighbourLabel = labels.labels[y + yoffset][x + xoffset];
+                        neighbourLabel = labels->labels[y + yoffset][x + xoffset];
 
                         if(neighbourLabel != -1)
                         {
-                            if (neighbourLabel < initialLabelValue && !Utils::contains(candidates, neighbourLabel))
+                            if (neighbourLabel < initialLabelValue && !Utils::contains<int>(&candidates, neighbourLabel))
                                 candidates.push_back(neighbourLabel);
 
-                            if (neighbourLabel < labels.labels[y][x])
-                                labels.labels[y][x] = neighbourLabel;
+                            if (neighbourLabel < labels->labels[y][x])
+                                labels->labels[y][x] = neighbourLabel;
                         }
                     }
                 }
@@ -59,87 +93,119 @@ Labels ConnectedComponents::getLabels(Image* img)
         }
     }
 
-    // Compute transitive closure
-
-    std::list<std::list<int>>::iterator it;
-
-    for(it = adjacencies.begin(); it != adjacencies.end(); ++it)
-    {
-        auto adj_a = *it;
-        if (adj_a.size() == 0) continue;
-
-        std::list<std::list<int>>::iterator inner_it;
-        for(inner_it = it.; inner_it != adjacencies.end(); ++inner_it)
-        {
-
-        }
-    }
+    // Compute the transitive closure of the adjacencies
 
     for (int i = 0; i < adjacencies.size(); i++)
     {
-        std::list<int> adj_a = adjacencies.get(i);
-        if (adj_a.size() == 0) continue;
+        auto adj_a = &adjacencies[i];
+        if (adj_a->size() == 0) continue;
 
         for (int j = 0; j < adjacencies.size(); j++)
         {
             if (i != j)
             {
-                var adj_b = adjacencies[j];
-                if (adj_b.size() == 0) continue;
+                auto adj_b = &adjacencies[j];
+                if (adj_b->size() == 0) continue;
 
-                if (adj_a.Intersect(adj_b).Any())
+                // if(Utils::intersection<int>(adj_a, adj_b).size() != 0)
+                // {
+                //     adjacencies[i] = Utils::union_<int>(adj_a, adj_b);
+                //     adj_b->clear();
+                // }
+
+                auto uni = Utils::union_<int>(adj_a, adj_b);
+                if(uni.size() < adj_a->size() + adj_b->size())
                 {
-                    adj_a = adj_a.Union(adj_b).ToList();
-                    adj_b = new List<int>();
-                    adjacencies[j] = adj_b;
+                    adjacencies[i] = uni;
+                    adj_b->clear();
                 }
             }
         }
-
-        adjacencies[i] = adj_a;
     }
 
-    List<List<int>> transitiveClosure = new List<List<int>>();
+    std::vector<std::vector<int>> transitiveClosure;
     for (int i = 0; i < adjacencies.size(); i++)
         if (adjacencies[i].size() != 0)
-            transitiveClosure.Add(adjacencies[i]);
+            transitiveClosure.push_back(adjacencies[i]);
 
-    // Save replacements found in the transitive closure in a dictionary
+    // Save replacements found in the transitive closure in a map
 
-    Dictionary<int, int> replacements = new Dictionary<int, int>();
+    std::map<int, int> replacements;
     for (int i = 0; i < transitiveClosure.size(); i++)
     {
-        int min = transitiveClosure[i].Min();
-        transitiveClosure[i].Remove(min);
+        auto it_min = std::min_element(transitiveClosure[i].begin(), transitiveClosure[i].end());
+        int min = *it_min;
+        transitiveClosure[i].erase(it_min);
         for(int k = 0; k < transitiveClosure[i].size(); k++)
         {
             label = transitiveClosure[i][k];
-            if (replacements.ContainsKey(label))
+            if (replacements.count(label))
                 ;// throw new Exception("Repeated key while applying transitive closure: " + label);
             else
-                replacements.Add(label, min);
+                replacements.insert({label, min});
         }
     }
 
-    // Apply replacements using the dictionary
+    // Apply the replacements using the map
 
     for (y = 0; y < height; y++)
     {
         for (x = 0; x < width; x++)
         {
-            label = labels.labels[y][x];
-            if (label != -1 && replacements.ContainsKey(label))
-                labels.labels[y][x] = replacements[label];
+            label = labels->labels[y][x];
+            if (label != -1 && replacements.count(label))
+                labels->labels[y][x] = replacements[label];
         }
     }
-
-    watch.Stop();
-    //Console.WriteLine($"Execution Time: {watch.ElapsedMilliseconds} ms");
 
     return labels;
 }
 
-std::map<int, BoundingBox> ConnectedComponents::getBoundingBoxes(Labels labels)
+std::map<int, BoundingBox> ConnectedComponents::getBoundingBoxes(Labels* labels)
 {
+    int height = labels->height;
+    int width = labels->width;
+    std::map<int, BoundingBox> boundingBoxes;
 
+    for (int y = 0; y < height; y++)
+    {
+        for(int x = 0; x < width; x++)
+        {
+            int label = labels->labels[y][x];
+            if (label != -1)
+            {
+                BoundingBox bbox;
+
+                if(boundingBoxes.find(label) == boundingBoxes.end())
+                {
+                    bbox = (BoundingBox) { .left = x, .right = x, .top = y, .bottom = y, .center_x = -1, .center_y = -1 };
+                    boundingBoxes.insert( {label, bbox} );
+                }
+                else
+                {
+                    bbox = boundingBoxes[label];
+
+                    if (x < bbox.left) bbox.left = x;
+                    if (x > bbox.right) bbox.right = x;
+                    if (y < bbox.top) bbox.top = y;
+                    if (y > bbox.bottom) bbox.bottom = y;
+
+                    boundingBoxes[label] = bbox;
+                }
+            }
+        }
+    }
+
+    std::map<int, BoundingBox> boundingBoxesWithCenter;
+
+    for(auto entry : boundingBoxes)
+    {
+        BoundingBox bbox = entry.second;
+        bbox.center_x = (int)round(bbox.left + (bbox.right - bbox.left) / 2.0);
+        bbox.center_y = (int)round(bbox.top + (bbox.bottom - bbox.top) / 2.0);
+
+        boundingBoxesWithCenter.insert( {entry.first, bbox} );
+    }
+
+    return boundingBoxesWithCenter;
 }

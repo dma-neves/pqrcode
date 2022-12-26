@@ -1,7 +1,12 @@
 #include <iostream>
+#include <chrono>
 
 #include "image/PNGHandler.hpp"
 #include "processing/ImageProcessor.hpp"
+#include "processing/ConnectedComponents.hpp"
+#include "QRCodeReader.hpp"
+
+#define TIME
 
 int main(int argc, char** argv)
 {
@@ -16,8 +21,17 @@ int main(int argc, char** argv)
     try
     {
         Image* img = im->readImage(argv[1]);
-        //ImageProcessor::negative(img);
-        ImageProcessor::convertToBW(img, ImageProcessor::getOtsuTheshold(img));
+
+        #ifdef TIME
+            auto start = std::chrono::high_resolution_clock::now();
+            QRCodeReader::read(img);
+            auto stop = std::chrono::high_resolution_clock::now();
+            auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+            std::cout << duration.count() << std::endl;
+        #else
+            std::cout << QRCodeReader::read(img) << std::endl;
+        #endif
+
         im->writeImage(img, argv[2]);
         delete img;
     }

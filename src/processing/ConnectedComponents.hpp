@@ -3,7 +3,7 @@
 
 #include <map>
 
-#include "image/Image.hpp"
+#include "../image/Image.hpp"
 
 struct BoundingBox
 {
@@ -17,7 +17,7 @@ public:
     int center_y;
 };
 
-struct Labels
+class Labels
 {
 public:
     int** labels;
@@ -44,8 +44,9 @@ public:
 class ConnectedComponents
 {
 public:
-    static Labels getLabels(Image* img);
-    static std::map<int, BoundingBox> getBoundingBoxes(Labels labels);
+    static void printLabels(Labels* labels);
+    static Labels* getLabels(Image* img);
+    static std::map<int, BoundingBox> getBoundingBoxes(Labels* labels);
 };
 
 #endif
