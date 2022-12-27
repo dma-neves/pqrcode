@@ -6,8 +6,6 @@
 #include "processing/ConnectedComponents.hpp"
 #include "QRCodeReader.hpp"
 
-#define TIME
-
 int main(int argc, char** argv)
 {
     if(argc != 3)
@@ -36,6 +34,10 @@ int main(int argc, char** argv)
         delete img;
     }
     catch(std::string msg)
+    {
+        std::cerr << "Exception: " << msg << std::endl;
+    }
+    catch(char const* msg)
     {
         std::cerr << "Exception: " << msg << std::endl;
     }

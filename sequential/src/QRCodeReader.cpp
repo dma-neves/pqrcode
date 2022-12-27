@@ -54,12 +54,15 @@ std::array<BoundingBox,3> getPositioningBlocks(std::map<int, BoundingBox> bboxes
 
 			if (getCenterDist(bbox_a, bbox_b) < COMPONENT_CENTER_DIST_MARGIN)
 			{
-				if(idx == 3)
+				bool a_in_b = isContained(bbox_b, bbox_a);
+				bool b_in_a = isContained(bbox_a, bbox_b);
+
+				if(idx == 3 && (a_in_b || b_in_a))
 					throw MORE_THAN_THREE_POSITIONING_BLOCKS_EXCPETION;
 
-				if (isContained(bbox_b, bbox_a))
+				if (a_in_b)
 					positioningBlocks[idx++] = bbox_a;
-				else if (isContained(bbox_a, bbox_b))
+				else if (b_in_a)
 					positioningBlocks[idx++] = bbox_b;
 			}
 		}
@@ -159,16 +162,29 @@ QRPos getQRPositioning(std::array<BoundingBox, 3> positioningBlocks)
 	return getQRPositioningRec(positioningBlocks, POSITIONING_BLOCKS_DIST_MARGIN, false, 1);
 }
 
-pcomp modeInSection(Image* img, int left, int right, int top, int bottom)
+pcomp moduleValue(Image* img, int left, int right, int top, int bottom)
 {
+	/*
+		Determine module value by calculating the mode in the
+		inner section of the module (only taking into account
+		the inner half of the square of pixels. This reduces
+		the interference of neighbouring modules).
+	*/
+
 	int zeroCount = 0;
 	int oneCount = 0;
 
-	for (int y = top+1; y < bottom; y++)
+	int ystart = top + (bottom-top)/4.0 + 1;
+	int yend = bottom - (bottom-top)/4.0 + 1;
+
+	int xstart = left + (right-left)/4.0 + 1;
+	int xend = right - (right-left)/4.0 + 1;
+
+	for (int y = ystart; y <= yend; y++)
 	{
-		for(int x = left+1; x < right; x++)
+		for(int x = xstart; x <= xend; x++)
 		{
-			if (img->pixels[y][x].r == 0)
+			if(img->pixels[y][x].r == 0)
 				zeroCount++;
 			else
 				oneCount++;
@@ -181,6 +197,8 @@ pcomp modeInSection(Image* img, int left, int right, int top, int bottom)
 std::string getBinaryCode(Image* img, int left, int right, int top, int bottom)
 {
 	std::ostringstream os;
+
+	// OMP for
 	for (int y = 0; y < 21; y++)
 	{
 		for (int x = 0; x < 21; x++)
@@ -191,7 +209,7 @@ std::string getBinaryCode(Image* img, int left, int right, int top, int bottom)
 				!(x >= 13 && y <= 7)
 			)
 			{
-				if( modeInSection(
+				if( moduleValue(
 					img,
 					(int)round(left + x * (right - left) / 21.0),
 					(int)round(left + (x+1) * (right - left) / 21.0),
@@ -242,7 +260,7 @@ std::string getBinaryCode(Image* img, int left, int right, int top, int bottom)
 
 std::string QRCodeReader::read(Image* img)
 {
-	int left, top, right, bottom;
+	int left = 0, top = 0, right = 0, bottom = 0;
 	Image* auxImg = img->copy();
 
 
@@ -268,6 +286,7 @@ std::string QRCodeReader::read(Image* img)
 		Image* croppedImage = cropImage(positioningBlocks, img);
 		pcomp threshold = ImageProcessor::getOtsuTheshold(croppedImage);
 		delete croppedImage;
+		if(abs(100-threshold) > 50) threshold = 100;
 		ImageProcessor::convertToBW(img, threshold);
 
 		/* Get QR code positioning based on the found positioning blocks */

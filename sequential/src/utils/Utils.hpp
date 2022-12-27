@@ -11,6 +11,7 @@ public:
     template <typename T>
     static bool contains(std::vector<T>* vec, T val)
     {
+        // OMP ?? this function is called many times
         return (std::find(vec->begin(), vec->end(), val) != vec->end());
     }
 
@@ -30,6 +31,7 @@ public:
     template <typename T>
     static std::vector<T> union_(std::vector<T>* v1, std::vector<T>* v2)
     {
+        // OMP ?? this function is called many times
         std::vector<T> uni;
 
         std::sort(v1->begin(), v1->end());

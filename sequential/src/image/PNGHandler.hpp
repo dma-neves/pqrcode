@@ -87,18 +87,28 @@ public:
         Image* img = new Image(width, height);
         nchan = 0;
         
-        // if(color_type == PNG_COLOR_TYPE_PALETTE)
-        // {
-        //     png_set_palette_to_rgb(png_ptr);
-        //     color_type = png_get_color_type(png_ptr, info_ptr);
-        // }
+        if(color_type == PNG_COLOR_TYPE_PALETTE)
+        {
+            png_set_palette_to_rgb(png_ptr);
+            color_type = png_get_color_type(png_ptr, info_ptr);
+        }
+
+        if(color_type == PNG_COLOR_TYPE_GRAY)
+        {
+            // TODO: this conversion sometimes results in an execution error
+            png_set_gray_to_rgb(png_ptr);
+            color_type = png_get_color_type(png_ptr, info_ptr);
+        }
 
         if (color_type == PNG_COLOR_TYPE_RGBA)
             nchan = 4;
         else if (color_type == PNG_COLOR_TYPE_RGB)
             nchan = 3;
         else
+        {
+            std::cout << "color type: " << (int)color_type << std::endl;
             throw INVALID_COLOR_FORMAT_EXCEPTION;
+        }
 
         for (int y = 0; y < height; y++)
         {

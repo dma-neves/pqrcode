@@ -23,7 +23,7 @@ void ConnectedComponents::printLabels(Labels* labels)
             if (labels->labels[y][x] == -1)
                 labelStr = " ";
 
-            int nwp = (3 - labelStr.length());
+            int nwp = (4 - labelStr.length());
 
             for (int i = 0; i < nwp; i++)
                 std::cout << " ";
@@ -49,6 +49,7 @@ Labels* ConnectedComponents::getLabels(Image* img)
 
     // TODO: don't need to set initial labels -> improve performance
 
+    // OMP for -> shared label var
     for (y = 0; y < height; y++)
     {
         for (x = 0; x < width; x++)
@@ -95,6 +96,7 @@ Labels* ConnectedComponents::getLabels(Image* img)
 
     // Compute the transitive closure of the adjacencies
 
+    // OMP computing union of unions
     for (int i = 0; i < adjacencies.size(); i++)
     {
         auto adj_a = &adjacencies[i];
@@ -140,7 +142,7 @@ Labels* ConnectedComponents::getLabels(Image* img)
         {
             label = transitiveClosure[i][k];
             if (replacements.count(label))
-                ;// throw new Exception("Repeated key while applying transitive closure: " + label);
+                ;// throw "repeated key while applying transitive closure";
             else
                 replacements.insert({label, min});
         }
@@ -148,6 +150,7 @@ Labels* ConnectedComponents::getLabels(Image* img)
 
     // Apply the replacements using the map
 
+    // OMP for
     for (y = 0; y < height; y++)
     {
         for (x = 0; x < width; x++)
