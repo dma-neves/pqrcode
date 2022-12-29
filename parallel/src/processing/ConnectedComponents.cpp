@@ -38,13 +38,79 @@ void ConnectedComponents::printLabels(Labels* labels)
 
 }
 
-Labels* ConnectedComponents::getLabels(Image* img)
+std::vector<std::vector<int>> getTransitiveClosure(std::vector<std::vector<int>> adjacencies)
+{
+    for (int i = 0; i < adjacencies.size(); i++)
+    {
+        auto adj_a = &adjacencies[i];
+        if (adj_a->size() == 0) continue;
+
+        for (int j = 0; j < adjacencies.size(); j++)
+        {
+            if (i != j)
+            {
+                auto adj_b = &adjacencies[j];
+                if (adj_b->size() == 0) continue;
+
+                auto uni = Utils::union_<int>(adj_a, adj_b);
+                if(uni.size() < adj_a->size() + adj_b->size())
+                {
+                    adjacencies[i] = uni;
+                    adj_b->clear();
+                }
+            }
+        }
+    }
+
+    std::vector<std::vector<int>> transitiveClosure;
+    for (int i = 0; i < adjacencies.size(); i++)
+        if (adjacencies[i].size() != 0)
+            transitiveClosure.push_back(adjacencies[i]);
+
+    return transitiveClosure;
+}
+
+void applyAdjacencies(Labels* labels, std::vector<std::vector<int>> adjacencies)
+{
+    int label;
+
+    // Save replacements found in the transitive closure in a map
+
+    std::map<int, int> replacements;
+    for (int i = 0; i < adjacencies.size(); i++)
+    {
+        auto it_min = std::min_element(adjacencies[i].begin(), adjacencies[i].end());
+        int min = *it_min;
+        adjacencies[i].erase(it_min);
+        for(int k = 0; k < adjacencies[i].size(); k++)
+        {
+            label = adjacencies[i][k];
+            if (replacements.count(label))
+                ;// throw "repeated key while applying transitive closure";
+            else
+                replacements.insert({label, min});
+        }
+    }
+
+    // Apply the replacements using the map
+
+    for (int y = 0; y < labels->height; y++)
+    {
+        for (int x = 0; x < labels->width; x++)
+        {
+            label = labels->labels[y][x];
+            if (label != -1 && replacements.count(label))
+                labels->labels[y][x] = replacements[label];
+        }
+    }
+}
+
+void computeLabels(Image* img, Labels* labels, int firstLabel)
 {
     int width = img->width;
     int height = img->height;
 
-    int label = 1, neighbourLabel;
-    Labels* labels = new Labels(width, height);
+    int label = firstLabel, neighbourLabel;
 
     std::vector<std::vector<int>> adjacencies;
 
@@ -95,100 +161,17 @@ Labels* ConnectedComponents::getLabels(Image* img)
     }
 
     // Compute the transitive closure of the adjacencies
+    std::vector<std::vector<int>> transitiveClosure = getTransitiveClosure(adjacencies);
 
-    int nthreads = omp_get_max_threads();
-    int adj_size = adjacencies.size();
-    int partition = adj_size/nthreads;
+    // Apply the adjacencies using the trasitive closure
+    applyAdjacencies(labels, transitiveClosure);
+}
 
-    #pragma omp parallel for
-    for(int t = 0; t < nthreads; t++)
-    {
-        for (int i = t*partition; i < (t+1)*partition; i++)
-        {
-            if(i >= adj_size) continue;
-
-            auto adj_a = &adjacencies[i];
-            if (adj_a->size() == 0) continue;
-
-            for (int j = t*partition; j < (t+1*partition); j++)
-            {
-                if(j >= adj_size) continue;
-
-                if (i != j)
-                {
-                    auto adj_b = &adjacencies[j];
-                    if (adj_b->size() == 0) continue;
-
-                    auto uni = Utils::union_<int>(adj_a, adj_b);
-                    if(uni.size() < adj_a->size() + adj_b->size())
-                    {
-                        adjacencies[i] = uni;
-                        adj_b->clear();
-                    }
-                }
-            }
-        }
-    }
-
-    for (int i = 0; i < adj_size; i++)
-    {
-        auto adj_a = &adjacencies[i];
-        if (adj_a->size() == 0) continue;
-
-        for (int j = 0; j < adj_size; j++)
-        {
-            if (i != j)
-            {
-                auto adj_b = &adjacencies[j];
-                if (adj_b->size() == 0) continue;
-
-                auto uni = Utils::union_<int>(adj_a, adj_b);
-                if(uni.size() < adj_a->size() + adj_b->size())
-                {
-                    adjacencies[i] = uni;
-                    adj_b->clear();
-                }
-            }
-        }
-    }
-
-    std::vector<std::vector<int>> transitiveClosure;
-    for (int i = 0; i < adjacencies.size(); i++)
-        if (adjacencies[i].size() != 0)
-            transitiveClosure.push_back(adjacencies[i]);
-
-    // Save replacements found in the transitive closure in a map
-
-    std::map<int, int> replacements;
-    for (int i = 0; i < transitiveClosure.size(); i++)
-    {
-        auto it_min = std::min_element(transitiveClosure[i].begin(), transitiveClosure[i].end());
-        int min = *it_min;
-        transitiveClosure[i].erase(it_min);
-        for(int k = 0; k < transitiveClosure[i].size(); k++)
-        {
-            label = transitiveClosure[i][k];
-            if (replacements.count(label))
-                ;// throw "repeated key while applying transitive closure";
-            else
-                replacements.insert({label, min});
-        }
-    }
-
-    // Apply the replacements using the map
-
-    // OMP for ?
-    #pragma omp parallel for private(label)
-    for (int y = 0; y < height; y++)
-    {
-        for (int x = 0; x < width; x++)
-        {
-            label = labels->labels[y][x];
-            if (label != -1 && replacements.count(label))
-                labels->labels[y][x] = replacements[label];
-        }
-    }
-
+Labels* ConnectedComponents::getLabels(Image* img)
+{
+    int firstLabel = 1;
+    Labels* labels = new Labels(img->width, img->height);  
+    computeLabels(img, labels, firstLabel);
     return labels;
 }
 
@@ -239,4 +222,88 @@ std::map<int, BoundingBox> ConnectedComponents::getBoundingBoxes(Labels* labels)
     }
 
     return boundingBoxesWithCenter;
+}
+
+Labels* ConnectedComponents::getLabelsParallel(Image* img)
+{
+    /*
+        Partition labels and image
+    */
+
+    int nthreads = omp_get_max_threads();
+    Image imgPartitions[nthreads];
+    int partSize = img->height / nthreads;
+
+    for(int i = 0; i < nthreads; i++)
+    {
+        imgPartitions[i].pixels = &img->pixels[i*partSize];
+        imgPartitions[i].width = img->width;
+        imgPartitions[i].height = partSize;
+    }
+    imgPartitions[nthreads-1].height = img->height - (partSize * (nthreads-1)) - 1;
+
+    Labels* labels = new Labels(img->width, img->height);
+    Labels labelsPartitions[nthreads];
+    for(int i = 0; i < nthreads; i++)
+    {
+        labelsPartitions[i].labels = &labels->labels[i*partSize];
+        labelsPartitions[i].width = labels->width;
+        labelsPartitions[i].height = partSize;
+    }
+    labelsPartitions[nthreads-1].height = labels->height - (partSize * (nthreads-1)) - 1;
+
+    /*
+        Run connected components on each partition
+    */
+
+    #pragma omp parallel for
+    for(int i = 0; i < nthreads; i++)
+    {
+        int firstLabel = i*partSize + 1;
+        computeLabels(&imgPartitions[i], &labelsPartitions[i], firstLabel);
+    }
+
+    /*
+        Join partitioned labels
+    */
+
+    // Find adjacencies between label partitions
+
+    int prevLabel = -1;
+    int prevNeighbourLabel = -1;
+
+    std::vector<std::vector<int>> interPartAdjacencies;
+    for(int y = partSize-1; y < img->height-partSize; y += partSize)
+    {
+        for(int x = 0; x < img->width; x++)
+        {
+            for(int xoffset = (x == 0 ? 0 : -1); xoffset <= (x == img->width-1 ? 0 : 1); xoffset++)
+            {
+                int neighbour_x = x+xoffset;
+                int neighbour_y = y+1;
+
+                int label = labels->labels[y][x];
+                int neighbourLabel = labels->labels[neighbour_y][neighbour_x];
+
+                if(label != -1 && neighbourLabel != -1 && label != prevLabel && neighbourLabel != prevNeighbourLabel)
+                {
+                    std::vector<int> adj;
+                    adj.push_back(label);
+                    adj.push_back(neighbourLabel);
+                    interPartAdjacencies.push_back(adj);
+
+                    prevLabel = label;
+                    prevNeighbourLabel = neighbourLabel;
+                }
+            }
+        }
+    }
+
+    // Compute transitive closure of interPartAdjacencies TODO: necessay?
+    std::vector<std::vector<int>> transitiveClosure = getTransitiveClosure(interPartAdjacencies);
+
+    // Apply the adjacencies using the trasitive closure
+    applyAdjacencies(labels, transitiveClosure);
+
+    return labels;
 }

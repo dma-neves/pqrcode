@@ -31,6 +31,7 @@ int main(int argc, char** argv)
         #endif
 
         im->writeImage(img, argv[2]);
+        img->destroy();
         delete img;
     }
     catch(std::string msg)

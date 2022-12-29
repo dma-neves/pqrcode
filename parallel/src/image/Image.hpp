@@ -21,6 +21,9 @@ public:
     int height;
     Pixel** pixels;
 
+    Image()
+    {}
+
     Image(int width, int height) : width(width), height(height)
     {
         pixels = new Pixel*[height];
@@ -30,6 +33,14 @@ public:
     }
 
     ~Image()
+    {
+        // for(int y = 0; y < height; y++)
+        //     delete pixels[y];
+
+        // delete pixels;
+    }
+
+    void destroy()
     {
         for(int y = 0; y < height; y++)
             delete pixels[y];

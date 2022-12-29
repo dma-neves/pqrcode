@@ -271,7 +271,7 @@ std::string QRCodeReader::read(Image* img)
 
 	/* Run connected components algorithm */
 
-	Labels* labels = ConnectedComponents::getLabels(auxImg);
+	Labels* labels = ConnectedComponents::getLabelsParallel(auxImg);
 	std::map<int, BoundingBox> bboxes = ConnectedComponents::getBoundingBoxes(labels);
 	try
 	{
@@ -286,6 +286,7 @@ std::string QRCodeReader::read(Image* img)
 		*/
 		Image* croppedImage = cropImage(positioningBlocks, img);
 		pcomp threshold = ImageProcessor::getOtsuTheshold(croppedImage);
+		croppedImage->destroy();
 		delete croppedImage;
 		if(abs(100-threshold) > 50) threshold = 100;
 		ImageProcessor::convertToBW(img, threshold);
@@ -328,6 +329,7 @@ std::string QRCodeReader::read(Image* img)
 			//qrposTransformed.center = ...;
 		}
 
+		copy->destroy();
 		delete copy;
 
 		double positioningBlocksDistance = qrposTransformed.rightVec.norm();
@@ -343,7 +345,9 @@ std::string QRCodeReader::read(Image* img)
 		std::cerr << "Exception: " << msg << std::endl;
 	}
 
+	labels->destroy();
 	delete labels;
+	auxImg->destroy();
 	delete auxImg;
 
 	return (left != right && bottom != top) ? getBinaryCode(img, left, right, top, bottom) : "";

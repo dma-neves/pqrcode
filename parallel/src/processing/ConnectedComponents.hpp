@@ -24,6 +24,9 @@ public:
     int width;
     int height;
 
+    Labels()
+    {}
+
     Labels(int width, int height) : width(width), height(height)
     {
         labels = new int*[height];
@@ -31,12 +34,20 @@ public:
             labels[y] = new int[width];
     }
 
-    ~Labels()
+    void destroy()
     {
         for(int y = 0; y < height; y++)
             delete labels[y];
 
         delete labels;
+    }
+
+    ~Labels()
+    {
+        // for(int y = 0; y < height; y++)
+        //     delete labels[y];
+
+        // delete labels;
     }
 };
 
@@ -46,6 +57,7 @@ class ConnectedComponents
 public:
     static void printLabels(Labels* labels);
     static Labels* getLabels(Image* img);
+    static Labels* getLabelsParallel(Image* img);
     static std::map<int, BoundingBox> getBoundingBoxes(Labels* labels);
 };
 
