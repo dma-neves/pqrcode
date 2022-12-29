@@ -2,6 +2,14 @@ import os
 
 NSAMPLES = 8
 
+FILENAME = "QRcode_Very_Large_out.png"
+MAKE_CMD = "make very large"
+RUN_CMD = "./pqrcode.out ../images/input/" + FILENAME + " ../images/output/" + FILENAME + " >> out.txt"
+
+# FILENAME = "QRcode_Large.png"
+# MAKE_CMD = "make large"
+# RUN_CMD = "./pqrcode.out ../images/input/" + FILENAME + " ../images/output/" + FILENAME + " >> out.txt"
+
 def average(l):
     sum = 0
 
@@ -11,12 +19,12 @@ def average(l):
     return sum/len(l)
 
 os.chdir("../sequential/")
-cmd = "make large"
+cmd = MAKE_CMD
 os.system(cmd)
 
 open("out.txt", 'w').close()
 for i in range(0,NSAMPLES):
-    cmd = "./pqrcode.out ../images/input/QRcode_Very_Large.png ../images/output/QRcode_Very_Large_out.png >> out.txt"
+    cmd = RUN_CMD
     os.system(cmd)
 
 samples = []
@@ -30,7 +38,7 @@ print("average:", average(samples))
 
 os.chdir("../parallel/")
 print("")
-cmd = "make large"
+cmd = MAKE_CMD
 os.system(cmd)
 
 for nt in ["2", "4", "6", "8"]:
@@ -38,7 +46,7 @@ for nt in ["2", "4", "6", "8"]:
 
     open("out.txt", 'w').close()
     for i in range(0,NSAMPLES):
-        cmd = "./pqrcode.out ../images/input/QRcode_Very_Large.png ../images/output/QRcode_Very_Large_out.png >> out.txt"
+        cmd = RUN_CMD
         os.system(cmd)
 
     samples = []
