@@ -1,17 +1,19 @@
+COMPILE=g++ src/main.cpp src/processing/ImageProcessor.cpp src/processing/ConnectedComponents.cpp src/QRCodeReader.cpp -o pqrcode.out -lpng -lm -fopenmp
+
 all:
-	g++ src/main.cpp src/processing/ImageProcessor.cpp src/processing/ConnectedComponents.cpp src/QRCodeReader.cpp -o pqrcode.out -lpng -lm -fopenmp
+	${COMPILE}
 
 time:
-	g++ src/main.cpp src/processing/ImageProcessor.cpp src/processing/ConnectedComponents.cpp src/QRCodeReader.cpp -o pqrcode.out -lpng -lm -fopenmp -DTIME
+	${COMPILE} -DTIME
 
 large:
-	g++ src/main.cpp src/processing/ImageProcessor.cpp src/processing/ConnectedComponents.cpp src/QRCodeReader.cpp -o pqrcode.out -lpng -lm -fopenmp -DTIME -DTIME -DCOMPONENT_CENTER_DIST_MARGIN=3
+	${COMPILE} -DTIME -DCOMPONENT_CENTER_DIST_MARGIN=3
 
 very_large:
-	g++ src/main.cpp src/processing/ImageProcessor.cpp src/processing/ConnectedComponents.cpp src/QRCodeReader.cpp -o pqrcode.out -lpng -lm -fopenmp -DTIME -DTIME -DCOMPONENT_CENTER_DIST_MARGIN=5
+	${COMPILE} -DTIME -DCOMPONENT_CENTER_DIST_MARGIN=5
 
 debug:
-	g++ src/main.cpp src/processing/ImageProcessor.cpp src/processing/ConnectedComponents.cpp src/QRCodeReader.cpp -o pqrcode.out -lpng -lm -fopenmp -g
+	${COMPILE} -g
 
 clean:
 	rm *.out

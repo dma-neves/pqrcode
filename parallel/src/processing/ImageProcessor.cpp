@@ -20,7 +20,6 @@ void ImageProcessor::negative(Image* img)
 
 void ImageProcessor::convertToBW(Image *img, pcomp threshold)
 {
-    // OMP for
     #pragma omp parallel for
     for(int y = 0; y < img->height; y++)
     {
@@ -112,7 +111,6 @@ void ImageProcessor::rotationAroundPoint(Image* img, Image* copy, double angle, 
     double cos_theta = cos(angle);
     double sin_theta = sin(angle);
 
-    // OMP for
     #pragma omp parallel for private(origin_x,origin_y)
     for(int y = 0; y < img->height; y++)
     {
@@ -141,7 +139,6 @@ void ImageProcessor::shear(Image* img, Image* copy, double x_shear, double y_she
 {
     int origin_x, origin_y;
 
-    // OMP for
     #pragma omp parallel for private(origin_x,origin_y)
     for(int y = 0; y < img->height; y++)
     {

@@ -11,21 +11,14 @@ RUN_CMD = "./pqrcode.out ../images/input/" + FILENAME + " ../images/output/" + F
 # RUN_CMD = "./pqrcode.out ../images/input/" + FILENAME + " ../images/output/" + FILENAME + " >> out.txt"
 
 def average(l):
-    sum = 0
-
-    for e in l:
-        sum += e
-    
-    return sum/len(l)
+    return sum(l) / len(l)
 
 os.chdir("../sequential/")
-cmd = MAKE_CMD
-os.system(cmd)
+os.system(MAKE_CMD)
 
 open("out.txt", 'w').close()
 for i in range(0,NSAMPLES):
-    cmd = RUN_CMD
-    os.system(cmd)
+    os.system(RUN_CMD)
 
 samples = []
 for sample in open("out.txt"):
@@ -38,16 +31,14 @@ print("average:", average(samples))
 
 os.chdir("../parallel/")
 print("")
-cmd = MAKE_CMD
-os.system(cmd)
+os.system(MAKE_CMD)
 
 for nt in ["2", "4", "6", "8"]:
     os.environ["OMP_NUM_THREADS"] = nt
 
     open("out.txt", 'w').close()
     for i in range(0,NSAMPLES):
-        cmd = RUN_CMD
-        os.system(cmd)
+        os.system(RUN_CMD)
 
     samples = []
     for sample in open("out.txt"):
