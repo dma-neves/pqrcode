@@ -1,0 +1,23 @@
+g++ src/main.cpp src/processing/ImageProcessor.cpp src/processing/ConnectedComponents.cpp src/QRCodeReader.cpp -o pqrcode.out -lpng -lm -DTIME -DCOMPONENT_CENTER_DIST_MARGIN=5
+
+sequential:
+samples: [10004015, 9932867, 9914389, 10182052, 9936349, 9921430, 10102114, 9963702]
+average: 9994614.75
+
+g++ src/main.cpp src/processing/ImageProcessor.cpp src/processing/ConnectedComponents.cpp src/QRCodeReader.cpp -o pqrcode.out -lpng -lm -fopenmp -DTIME -DTIME -DCOMPONENT_CENTER_DIST_MARGIN=5
+
+parallel 2 threads:
+samples: [6769442, 6808196, 6771641, 6758345, 6743516, 6750762, 6763234, 6751009]
+average: 6764518.125
+
+parallel 4 threads:
+samples: [5466425, 5443168, 5456257, 5458826, 5440358, 5467949, 5484244, 5483549]
+average: 5462597.0
+
+parallel 6 threads:
+samples: [5313943, 5317906, 5322882, 5298667, 5331818, 5327785, 5302202, 5328120]
+average: 5317915.375
+
+parallel 8 threads:
+samples: [4650636, 4650975, 4602438, 4584138, 4674388, 4587419, 4660022, 4584198]
+average: 4624276.75
