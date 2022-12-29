@@ -198,7 +198,6 @@ std::string getBinaryCode(Image* img, int left, int right, int top, int bottom)
 {
 	std::ostringstream os;
 
-	// OMP for
 	for (int y = 0; y < 21; y++)
 	{
 		for (int x = 0; x < 21; x++)

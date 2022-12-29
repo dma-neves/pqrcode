@@ -3,3 +3,4 @@
 .vscode/*
 images/output/*
 sequential/out.txt
+parallel/out.txt

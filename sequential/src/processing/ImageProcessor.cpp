@@ -18,7 +18,6 @@ void ImageProcessor::negative(Image* img)
 
 void ImageProcessor::convertToBW(Image *img, pcomp threshold)
 {
-    // OMP for
     for(int y = 0; y < img->height; y++)
     {
         for(int x = 0; x < img->width; x++)
@@ -48,7 +47,6 @@ pcomp ImageProcessor::getOtsuTheshold(Image *img)
 
     int best_t = 0;
     double best_var = 0;
-    // OMP for ? small loop but large computation -> compare all best_vars
     for (int t = 0; t < N_COMP_VALS; t++)
     {
         double q1 = 0;
@@ -90,7 +88,6 @@ std::array<int, N_COMP_VALS> ImageProcessor::histogramGray(Image* img)
     std::array<int, N_COMP_VALS> hist;
     hist.fill(0);
     
-    // OMP for -> need to join sub histograms in the end
     for(int y = 0; y < img->height; y++)
     {
         for(int x = 0; x < img->width; x++)
@@ -109,15 +106,10 @@ void ImageProcessor::rotationAroundPoint(Image* img, Image* copy, double angle, 
     double cos_theta = cos(angle);
     double sin_theta = sin(angle);
 
-    // OMP for
     for(int y = 0; y < img->height; y++)
     {
         for(int x = 0; x < img->width; x++)
         {
-            img->pixels[y][x].r = 0;
-            img->pixels[y][x].g = 0;
-            img->pixels[y][x].b = 0;
-
             origin_x = (int)round((x - center.x) * cos_theta - (center.y - y) * sin_theta + center.x);
             origin_y = (int)round(center.y - (x - center.x) * sin_theta - (center.y - y) * cos_theta);
 
@@ -142,15 +134,10 @@ void ImageProcessor::shear(Image* img, Image* copy, double x_shear, double y_she
 {
     int origin_x, origin_y;
 
-    // OMP for
     for(int y = 0; y < img->height; y++)
     {
         for(int x = 0; x < img->width; x++)
         {
-            img->pixels[y][x].r = 0;
-            img->pixels[y][x].g = 0;
-            img->pixels[y][x].b = 0;
-
             origin_x = (int)round(x - x_shear*y);
             origin_y = (int)round(y - y_shear*x);
 

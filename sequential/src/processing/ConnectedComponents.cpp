@@ -49,7 +49,6 @@ Labels* ConnectedComponents::getLabels(Image* img)
 
     // TODO: don't need to set initial labels -> improve performance
 
-    // OMP for -> shared label var
     for (y = 0; y < height; y++)
     {
         for (x = 0; x < width; x++)
@@ -96,7 +95,6 @@ Labels* ConnectedComponents::getLabels(Image* img)
 
     // Compute the transitive closure of the adjacencies
 
-    // OMP computing union of unions
     for (int i = 0; i < adjacencies.size(); i++)
     {
         auto adj_a = &adjacencies[i];
@@ -150,7 +148,6 @@ Labels* ConnectedComponents::getLabels(Image* img)
 
     // Apply the replacements using the map
 
-    // OMP for
     for (y = 0; y < height; y++)
     {
         for (x = 0; x < width; x++)
