@@ -197,66 +197,78 @@ pcomp moduleValue(Image* img, int left, int right, int top, int bottom)
 
 std::string getBinaryCode(Image* img, int left, int right, int top, int bottom)
 {
-	std::ostringstream os;
+	int nthreads = omp_get_max_threads();
+	std::ostringstream ostr[nthreads];
 
-	// TODO: OMP for -> join os
-	for (int y = 0; y < 21; y++)
+	#pragma omp parallel
 	{
-		for (int x = 0; x < 21; x++)
+		int t = omp_get_thread_num();
+		std::ostringstream& os = ostr[t];
+
+		#pragma omp for
+		for (int y = 0; y < 21; y++)
 		{
-			if (
-				!(x <= 7 && y <= 7) &&
-				!(x <= 7 && y >= 13) &&
-				!(x >= 13 && y <= 7)
-			)
+			for (int x = 0; x < 21; x++)
 			{
-				if( moduleValue(
-					img,
-					(int)round(left + x * (right - left) / 21.0),
-					(int)round(left + (x+1) * (right - left) / 21.0),
-					(int)round(top + y * (bottom-top)/21.0),
-					(int)round(top + (y+1) * (bottom - top) / 21.0)
-				) == 0)
-					os << "1";
-				else
-					os << "0";
-
-				#ifdef DEBUG_QR_BINARY
-					bool failed = false;
-					std::string correct = CORRECT_BINARY;
-
-					std::string str = os.str();
-
-					if (str[str.length() - 1] != correct[str.length() - 1])
-					{
-						// std::cout << "failed at x: " << x << " y: " << y << std::endl;
-						// std::cout << "value: " << str[str.length() - 1] << std::endl;
-						// std::cout << std::endl;
-						failed = true;
-					}
-
-					int real_y = top + y * (bottom-top) / 21.0;
-					int real_x = left + x * (right - left) / 21.0;
-					Pixel* p = &img->pixels[real_y][real_x];
-
-					if (failed)
-					{
-						p->r = 255;
-						p->g = 0;
-						p->b = 0;
-					}
+				if (
+					!(x <= 7 && y <= 7) &&
+					!(x <= 7 && y >= 13) &&
+					!(x >= 13 && y <= 7)
+				)
+				{
+					if( moduleValue(
+						img,
+						(int)round(left + x * (right - left) / 21.0),
+						(int)round(left + (x+1) * (right - left) / 21.0),
+						(int)round(top + y * (bottom-top)/21.0),
+						(int)round(top + (y+1) * (bottom - top) / 21.0)
+					) == 0)
+						os << "1";
 					else
-					{
-						p->r = 0;
-						p->g = 255;
-						p->b = 0;
-					}
-				#endif
+						os << "0";
+
+					#ifdef DEBUG_QR_BINARY
+						bool failed = false;
+						std::string correct = CORRECT_BINARY;
+
+						std::string str = os.str();
+
+						if (str[str.length() - 1] != correct[str.length() - 1])
+						{
+							// std::cout << "failed at x: " << x << " y: " << y << std::endl;
+							// std::cout << "value: " << str[str.length() - 1] << std::endl;
+							// std::cout << std::endl;
+							failed = true;
+						}
+
+						int real_y = top + y * (bottom-top) / 21.0;
+						int real_x = left + x * (right - left) / 21.0;
+						Pixel* p = &img->pixels[real_y][real_x];
+
+						if (failed)
+						{
+							p->r = 255;
+							p->g = 0;
+							p->b = 0;
+						}
+						else
+						{
+							p->r = 0;
+							p->g = 255;
+							p->b = 0;
+						}
+					#endif
+				}
 			}
 		}
 	}
 
-	return os.str();
+	std::ostringstream ostrConcat;
+	for(int i = 0; i < nthreads; i++)
+		ostrConcat << ostr[i].str();
+
+
+	return ostrConcat.str();
 }
 
 std::string QRCodeReader::read(Image* img)

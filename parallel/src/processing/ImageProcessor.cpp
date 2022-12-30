@@ -50,39 +50,56 @@ pcomp ImageProcessor::getOtsuTheshold(Image *img)
 
     int best_t = 0;
     double best_var = 0;
-    // TODO: OMP for ? small loop but large computation -> compare all best_vars
-    for (int t = 0; t < N_COMP_VALS; t++)
+
+    #pragma omp parallel
     {
-        double q1 = 0;
-        for (int i = 0; i <= t; i++)
-            q1 += hist[i];
-        q1 /= total_sum;
+        double best_var_priv = 0;
+        int best_t_priv = 0;
 
-        double q2 = 0;
-        for (int i = t + 1; i < N_COMP_VALS; i++)
-            q2 += hist[i];
-        q2 /= total_sum;
-
-        double u1 = 0;
-        for (int i = 0; i <= t; i++)
-            u1 += i * hist[i];
-        u1 /= total_sum;
-        u1 = q1 == 0 ? 0 : u1 / q1;
-
-        double u2 = 0;
-        for (int i = t + 1; i < N_COMP_VALS; i++)
-            u2 += i * hist[i];
-        u2 /= total_sum;
-        u2 = q2 == 0 ? 0 : u2 / q2;
-
-
-        double var = q1 * q2 * (u1 - u2) * (u1 - u2);
-        if (t == 0 || var > best_var)
+        #pragma omp for
+        for (int t = 0; t < N_COMP_VALS; t++)
         {
-            best_t = t;
-            best_var = var;
+            double q1 = 0;
+            for (int i = 0; i <= t; i++)
+                q1 += hist[i];
+            q1 /= total_sum;
+
+            double q2 = 0;
+            for (int i = t + 1; i < N_COMP_VALS; i++)
+                q2 += hist[i];
+            q2 /= total_sum;
+
+            double u1 = 0;
+            for (int i = 0; i <= t; i++)
+                u1 += i * hist[i];
+            u1 /= total_sum;
+            u1 = q1 == 0 ? 0 : u1 / q1;
+
+            double u2 = 0;
+            for (int i = t + 1; i < N_COMP_VALS; i++)
+                u2 += i * hist[i];
+            u2 /= total_sum;
+            u2 = q2 == 0 ? 0 : u2 / q2;
+
+
+            double var = q1 * q2 * (u1 - u2) * (u1 - u2);
+            if (t == 0 || var > best_var_priv)
+            {
+                best_t_priv = t;
+                best_var_priv = var;
+            }
+        }
+
+        #pragma omp critical
+        {
+            if(best_var_priv > best_var)
+            {
+                best_var = best_var_priv;
+                best_t = best_t_priv;
+            }
         }
     }
+
 
     return best_var;
 }

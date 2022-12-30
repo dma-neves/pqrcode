@@ -2,13 +2,15 @@ import os
 
 NSAMPLES = 8
 
-FILENAME = "QRcode_Very_Large_out.png"
-MAKE_CMD = "make very large"
+FILENAME = "QRcode_Very_Large.png"
+MAKE_CMD = "make very_large"
 RUN_CMD = "./pqrcode.out ../images/input/" + FILENAME + " ../images/output/" + FILENAME + " >> out.txt"
 
 # FILENAME = "QRcode_Large.png"
 # MAKE_CMD = "make large"
 # RUN_CMD = "./pqrcode.out ../images/input/" + FILENAME + " ../images/output/" + FILENAME + " >> out.txt"
+
+averages = []
 
 def average(l):
     return sum(l) / len(l)
@@ -27,7 +29,9 @@ for sample in open("out.txt"):
 print("")
 print("sequential:")
 print("samples:" , samples)
-print("average:", average(samples))
+avg = average(samples)
+averages.append(avg)
+print("average:", avg)
 
 os.chdir("../parallel/")
 print("")
@@ -47,4 +51,9 @@ for nt in ["2", "4", "6", "8"]:
     print("")
     print("parallel" , nt, "threads:")
     print("samples:" , samples)
-    print("average:", average(samples))
+    avg = average(samples)
+    averages.append(avg)
+    print("average:", avg)
+
+print("")
+print("averages list:", averages)

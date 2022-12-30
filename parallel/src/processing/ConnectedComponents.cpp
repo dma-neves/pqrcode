@@ -94,7 +94,6 @@ void applyAdjacencies(Labels* labels, std::vector<std::vector<int>> adjacencies)
 
     // Apply the replacements using the map
 
-    // TODO: parallelize
     for (int y = 0; y < labels->height; y++)
     {
         for (int x = 0; x < labels->width; x++)
