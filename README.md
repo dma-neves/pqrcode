@@ -5,11 +5,11 @@
 ### Description
 - A simple QR code reading algorithm implemented in c++ using a sequence of image processing algorithms, accelerated using the OpenMP api.
 - Given that a lot of image transformation algorithms don't contain loop dependencies, these algorithms are easilly parellelized using loop-level parallelism. Other algorithms used in this program, like the connected components algorithm, can be fairly easily partitioned, allowing for parallel execution of these algorithms as well. The aim of this project, is therefore, to study the impact on the execution time of a QR Code reader when parellizing these algorithms.
-- Note: The program currently only supports png images and assumes that there is exactly one QR Code present in the image, and that the QR Code has 21x21 modules..
+- Note: The program currently only supports png images and assumes that there is exactly one QR Code present in the image with 21x21 modules.
 
 ### Requirments
   - Unix based OS
-  - g++ compiler
+  - g++
   - [libpng](http://www.libpng.org/pub/png/libpng.html)
   - [OpenMP](https://www.openmp.org/)
 
@@ -24,7 +24,7 @@ The sequential algorithm, takes as input a pointer to an `Image` object, which c
 
 - **QR Code Positioning:** After the components have been labeled, the bounding boxes of all the components are computed, and the 3 QR Code positioning blocks are located by finding bounding boxes that share the same center and for which one of the bounding boxes is contained in the other. After this, it's determined which positioning blocks are which (Up-Left, Up-Right and Low-Left).
 
-- **Selective Binarization:** Once the QR Code has been located within the image, a new otsu threshold is calculated, using only the pixels in the region of the QR Code. The original image is then binarized again using this new threshold. It was observed that by redoing the binarization with this more selective threshold, the subsequent reading of the QR Code becomes more precise.
+- **Selective Binarization:** Once the QR Code has been located within the image, a new otsu threshold is calculated, only using the pixels in the region of the QR Code. The original image is then binarized again using this new threshold. It was observed that by redoing the binarization with this more selective threshold, the subsequent reading of the QR Code becomes more precise.
 
 - **Rotation and Shearing:** With the relative positions of the positioning blocks, it is determined how much the image should be rotated and sheared to ensure that the QR Code ends up straight and undistorted.
 
@@ -34,7 +34,7 @@ The sequential algorithm, takes as input a pointer to an `Image` object, which c
 
 The parallelization of the program using OpenMP is done in three different modules:
 
-- **Image Processor:** To parallelize the image transformation algorithms, I simply used the `omp parallel for` primitive. This way, each thread can compute an equally sized partition of the image simultaneously. Two other funcitons that are also parallelized using this primitive are the `getOtsuTheshold` (which requires some extra logic to select the best threshold between the best thresholds found by each thread) and the `histogramGray` (which requires some extra logic to sum of all the histograms computed by each thread) functions.
+- **Image Processor:** To parallelize the image transformation algorithms, I simply used the `omp parallel for` primitive. This way, each thread can compute an equally sized partition of the image simultaneously. Two other funcitons that are also parallelized using this primitive are the `getOtsuTheshold` and the `histogramGray` functions. The `getOtsuTheshold` functions requires some extra logic to select the best threshold between the best thresholds found by each thread, and the `histogramGray` functions requires some extra logic to sum of all the histograms computed by each thread.
 <!-- 
     ```c++
     Image Transformations:
@@ -80,13 +80,13 @@ The parallelization of the program using OpenMP is done in three different modul
     }
     ``` -->
 
-- **Connected Components:** To parallelize the connected components algorithm, the image is partitioned in $N$ equally sized partitions. $N$ threads then perform the connected components algorithm on each partition. Once all the threads have finished, the adjacencies between the borders of each partition are determined, and the labels affected by these adjecencies are replaced.
+- **Connected Components:** To parallelize the connected components algorithm, the image is partitioned horizontally into $N$ equally sized partitions. $N$ threads then perform the connected components algorithm on each partition. Once all the threads have finished, the adjacencies between the borders of each partition are determined, and the labels affected by these adjecencies are replaced.
 
 - **QR Code reading:** Once the image has been processed, the reading of the the modules of the QR Code is also parallelized simply using the `omp parallel for` primitive, allowing different modules to be processed simultaneously by multiple threads. Once all threads have finished, the binary codes generated by each thread are concatenated into the final code.
 
 ### Benchmarks
 
-To test the impact of the parallelization of these algorithms a benchmark was developed. This benchmark processes the same image using the sequential and parallel versions of the program with 2,4,6 and 8 threads. To get more precise results, each configuration is executed 8 times, and then the average value of the execution times is used. The following plots show the values generated by this benchmark for 2 images. The first image having 2170x2230 pixels and the second 4340x4460 pixels. From these we can see we can get speedups up to 2.2 and 2.3 respectively.
+To test the impact of the parallelization of these algorithms a benchmark was developed. This benchmark processes the same image using the sequential and parallel versions of the program using 2,4,6 and 8 threads. To get more precise results, each configuration is executed 8 times, and then the average value of the execution times is used. The following plots show the values generated by this benchmark for 2 images. The first image having 2170x2230 pixels and the second 4340x4460 pixels. From these we can see we can get speedups up to 2.2 and 2.3 respectively.
 
 |   |   |
 |:---:|:---:|
