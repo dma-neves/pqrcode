@@ -50,7 +50,7 @@ pcomp ImageProcessor::getOtsuTheshold(Image *img)
 
     int best_t = 0;
     double best_var = 0;
-    // OMP for ? small loop but large computation -> compare all best_vars
+    // TODO: OMP for ? small loop but large computation -> compare all best_vars
     for (int t = 0; t < N_COMP_VALS; t++)
     {
         double q1 = 0;
@@ -91,14 +91,26 @@ std::array<int, N_COMP_VALS> ImageProcessor::histogramGray(Image* img)
 {
     std::array<int, N_COMP_VALS> hist;
     hist.fill(0);
-    
-    // OMP for -> need to join sub histograms in the end
-    for(int y = 0; y < img->height; y++)
+
+    #pragma omp parallel
     {
-        for(int x = 0; x < img->width; x++)
+        std::array<int, N_COMP_VALS> hist_priv;
+        hist_priv.fill(0);
+
+        #pragma omp for
+        for(int y = 0; y < img->height; y++)
         {
-            pcomp val = round( (img->pixels[y][x].r + img->pixels[y][x].g + img->pixels[y][x].b) / 3.0 );
-            hist[val]++;
+            for(int x = 0; x < img->width; x++)
+            {
+                pcomp val = round( (img->pixels[y][x].r + img->pixels[y][x].g + img->pixels[y][x].b) / 3.0 );
+                hist_priv[val]++;
+            }
+        }
+
+        #pragma omp critical
+        {
+            for(int i = 0; i < N_COMP_VALS; i++)
+                hist[i] += hist_priv[i];
         }
     }
 

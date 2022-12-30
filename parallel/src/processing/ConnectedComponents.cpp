@@ -94,6 +94,7 @@ void applyAdjacencies(Labels* labels, std::vector<std::vector<int>> adjacencies)
 
     // Apply the replacements using the map
 
+    // TODO: parallelize
     for (int y = 0; y < labels->height; y++)
     {
         for (int x = 0; x < labels->width; x++)
@@ -226,42 +227,41 @@ std::map<int, BoundingBox> ConnectedComponents::getBoundingBoxes(Labels* labels)
 
 Labels* ConnectedComponents::getLabelsParallel(Image* img)
 {
-    /*
-        Partition labels and image
-    */
+    Labels* labels = new Labels(img->width, img->height);
 
     int nthreads = omp_get_max_threads();
-    Image imgPartitions[nthreads];
     int partSize = img->height / nthreads;
 
-    for(int i = 0; i < nthreads; i++)
-    {
-        imgPartitions[i].pixels = &img->pixels[i*partSize];
-        imgPartitions[i].width = img->width;
-        imgPartitions[i].height = partSize;
-    }
-    imgPartitions[nthreads-1].height = img->height - (partSize * (nthreads-1)) - 1;
+   #pragma omp parallel
+   {
+        int t = omp_get_thread_num();
 
-    Labels* labels = new Labels(img->width, img->height);
-    Labels labelsPartitions[nthreads];
-    for(int i = 0; i < nthreads; i++)
-    {
-        labelsPartitions[i].labels = &labels->labels[i*partSize];
-        labelsPartitions[i].width = labels->width;
-        labelsPartitions[i].height = partSize;
-    }
-    labelsPartitions[nthreads-1].height = labels->height - (partSize * (nthreads-1)) - 1;
+        /*
+            Partition labels and image
+        */
 
-    /*
-        Run connected components on each partition
-    */
+        Image imgPartition;
+        imgPartition.pixels = &img->pixels[t*partSize];
+        imgPartition.width = img->width;
+        imgPartition.height = t == nthreads-1 ? 
+            img->height - (partSize * (nthreads-1)) - 1 :
+            partSize;
 
-    #pragma omp parallel for
-    for(int i = 0; i < nthreads; i++)
-    {
-        int firstLabel = i*partSize + 1;
-        computeLabels(&imgPartitions[i], &labelsPartitions[i], firstLabel);
-    }
+        Labels labelsPartition;
+        labelsPartition.labels = &labels->labels[t*partSize];
+        labelsPartition.width = labels->width;
+        labelsPartition.height = t == nthreads-1 ? 
+            labels->height - (partSize * (nthreads-1)) - 1 :
+            partSize;
+
+
+        /*
+            Run connected components on each partition
+        */
+
+        int firstLabel = t*partSize + 1;
+        computeLabels(&imgPartition, &labelsPartition, firstLabel);
+   }
 
     /*
         Join partitioned labels
