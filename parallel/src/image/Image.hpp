@@ -19,7 +19,7 @@ class Image
 public:
     int width;
     int height;
-    Pixel** pixels;
+    Pixel** __restrict__ pixels;
 
     Image()
     {}

@@ -1,25 +1,25 @@
-g++ src/main.cpp src/processing/ImageProcessor.cpp src/processing/ConnectedComponents.cpp src/QRCodeReader.cpp -o pqrcode.out -lpng -lm -DTIME -DCOMPONENT_CENTER_DIST_MARGIN=3
+g++ src/main.cpp src/processing/ImageProcessor.cpp src/processing/ConnectedComponents.cpp src/QRCodeReader.cpp -o pqrcode.out -lpng -lm -O3 -DTIME -DCOMPONENT_CENTER_DIST_MARGIN=3
 
-sequential:
-samples: [1964378, 1955359, 1992875, 1956378, 1971302, 1939119, 1963278, 1971004]
-average: 1964211.625
+sequential
+samples: [436196, 452029, 446266, 446088, 432937, 428805, 316277, 264541]
+average: 402892.375
 
-g++ src/main.cpp src/processing/ImageProcessor.cpp src/processing/ConnectedComponents.cpp src/QRCodeReader.cpp -o pqrcode.out -lpng -lm -fopenmp -DTIME -DCOMPONENT_CENTER_DIST_MARGIN=3
+g++ src/main.cpp src/processing/ImageProcessor.cpp src/processing/ConnectedComponents.cpp src/QRCodeReader.cpp -o pqrcode.out -lpng -lm -fopenmp -O3 -DTIME -DCOMPONENT_CENTER_DIST_MARGIN=3
 
 parallel 2 threads:
-samples: [1332804, 1328838, 1336740, 1339033, 1325639, 1316885, 1330335, 1324104]
-average: 1329297.25
+samples: [204318, 201986, 191872, 201205, 186613, 194667, 200830, 207714]
+average: 198650.625
 
 parallel 4 threads:
-samples: [1024121, 1033378, 1017789, 1011525, 1010614, 1012042, 1006022, 1015171]
-average: 1016332.75
+samples: [137626, 141855, 143434, 157146, 157131, 155868, 150178, 150580]
+average: 149227.25
 
 parallel 6 threads:
-samples: [975666, 978214, 991977, 980677, 976392, 982747, 982977, 975968]
-average: 980577.25
+samples: [136377, 138562, 144551, 147420, 140868, 150001, 147733, 145133]
+average: 143830.625
 
 parallel 8 threads:
-samples: [886596, 882377, 896770, 892226, 881404, 890914, 884829, 891179]
-average: 888286.875
+samples: [126906, 129373, 129069, 128021, 131554, 129523, 135609, 132742]
+average: 130349.625
 
-averages list: [1964211.625, 1329297.25, 1016332.75, 980577.25, 888286.875]
+averages list: [402892.375, 198650.625, 149227.25, 143830.625, 130349.625]

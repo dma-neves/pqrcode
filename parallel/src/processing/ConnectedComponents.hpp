@@ -20,7 +20,7 @@ public:
 class Labels
 {
 public:
-    int** labels;
+    int** __restrict__ labels;
     int width;
     int height;
 
