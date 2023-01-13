@@ -8,19 +8,19 @@
 
 #include "../utils/Utils.hpp"
 
-void ConnectedComponents::printLabels(Labels* labels)
+void ConnectedComponents::printLabels(Labels& labels)
 {
     /*
     * DEBUG
     */
 
-    for (int y = 0; y < labels->height; y++)
+    for (int y = 0; y < labels.height; y++)
     {
-        for (int x = 0; x < labels->width; x++)
+        for (int x = 0; x < labels.width; x++)
         {
-            std::string labelStr = std::to_string(labels->labels[y][x]);
+            std::string labelStr = std::to_string(labels.labels[y][x]);
 
-            if (labels->labels[y][x] == -1)
+            if (labels.labels[y][x] == -1)
                 labelStr = " ";
 
             int nwp = (4 - labelStr.length());
@@ -36,14 +36,14 @@ void ConnectedComponents::printLabels(Labels* labels)
 
 }
 
-Labels* ConnectedComponents::getLabels(Image* img)
+Labels ConnectedComponents::getLabels(Image& img)
 {
     int x, y;
-    int width = img->width;
-    int height = img->height;
+    int width = img.width;
+    int height = img.height;
 
     int label = 1, neighbourLabel;
-    Labels* labels = new Labels(width, height);
+    Labels labels(width, height);
 
     std::vector<std::vector<int>> adjacencies;
 
@@ -53,10 +53,10 @@ Labels* ConnectedComponents::getLabels(Image* img)
     {
         for (x = 0; x < width; x++)
         {
-            if(img->pixels[y][x].r == 0)
-                labels->labels[y][x] = label++;
+            if(img.pixels[y][x].r == 0)
+                labels.labels[y][x] = label++;
             else
-                labels->labels[y][x] = -1;
+                labels.labels[y][x] = -1;
         }
     }
 
@@ -66,7 +66,7 @@ Labels* ConnectedComponents::getLabels(Image* img)
     {
         for (x = 0; x < width; x++)
         {
-            int initialLabelValue = labels->labels[y][x];
+            int initialLabelValue = labels.labels[y][x];
             if (initialLabelValue != -1)
             {
                 std::vector<int> candidates;
@@ -74,15 +74,15 @@ Labels* ConnectedComponents::getLabels(Image* img)
                 {
                     for (int xoffset = (x == 0 ? 0 : -1); xoffset <= (x == width - 1 ? 0 : 1); xoffset++)
                     {
-                        neighbourLabel = labels->labels[y + yoffset][x + xoffset];
+                        neighbourLabel = labels.labels[y + yoffset][x + xoffset];
 
                         if(neighbourLabel != -1)
                         {
                             if (neighbourLabel < initialLabelValue && !Utils::contains<int>(&candidates, neighbourLabel))
                                 candidates.push_back(neighbourLabel);
 
-                            if (neighbourLabel < labels->labels[y][x])
-                                labels->labels[y][x] = neighbourLabel;
+                            if (neighbourLabel < labels.labels[y][x])
+                                labels.labels[y][x] = neighbourLabel;
                         }
                     }
                 }
@@ -152,26 +152,26 @@ Labels* ConnectedComponents::getLabels(Image* img)
     {
         for (x = 0; x < width; x++)
         {
-            label = labels->labels[y][x];
+            label = labels.labels[y][x];
             if (label != -1 && replacements.count(label))
-                labels->labels[y][x] = replacements[label];
+                labels.labels[y][x] = replacements[label];
         }
     }
 
     return labels;
 }
 
-std::map<int, BoundingBox> ConnectedComponents::getBoundingBoxes(Labels* labels)
+std::map<int, BoundingBox> ConnectedComponents::getBoundingBoxes(Labels& labels)
 {
-    int height = labels->height;
-    int width = labels->width;
+    int height = labels.height;
+    int width = labels.width;
     std::map<int, BoundingBox> boundingBoxes;
 
     for (int y = 0; y < height; y++)
     {
         for(int x = 0; x < width; x++)
         {
-            int label = labels->labels[y][x];
+            int label = labels.labels[y][x];
             if (label != -1)
             {
                 BoundingBox bbox;

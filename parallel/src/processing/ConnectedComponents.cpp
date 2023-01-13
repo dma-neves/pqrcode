@@ -10,19 +10,19 @@
 
 #include "../utils/Utils.hpp"
 
-void ConnectedComponents::printLabels(Labels* labels)
+void ConnectedComponents::printLabels(Labels& labels)
 {
     /*
     * DEBUG
     */
 
-    for (int y = 0; y < labels->height; y++)
+    for (int y = 0; y < labels.height; y++)
     {
-        for (int x = 0; x < labels->width; x++)
+        for (int x = 0; x < labels.width; x++)
         {
-            std::string labelStr = std::to_string(labels->labels[y][x]);
+            std::string labelStr = std::to_string(labels.labels[y][x]);
 
-            if (labels->labels[y][x] == -1)
+            if (labels.labels[y][x] == -1)
                 labelStr = " ";
 
             int nwp = (4 - labelStr.length());
@@ -70,7 +70,7 @@ std::vector<std::vector<int>> getTransitiveClosure(std::vector<std::vector<int>>
     return transitiveClosure;
 }
 
-void applyAdjacencies(Labels* labels, std::vector<std::vector<int>> adjacencies)
+void applyAdjacencies(Labels& labels, std::vector<std::vector<int>> adjacencies)
 {
     int label;
 
@@ -94,21 +94,21 @@ void applyAdjacencies(Labels* labels, std::vector<std::vector<int>> adjacencies)
 
     // Apply the replacements using the map
 
-    for (int y = 0; y < labels->height; y++)
+    for (int y = 0; y < labels.height; y++)
     {
-        for (int x = 0; x < labels->width; x++)
+        for (int x = 0; x < labels.width; x++)
         {
-            label = labels->labels[y][x];
+            label = labels.labels[y][x];
             if (label != -1 && replacements.count(label))
-                labels->labels[y][x] = replacements[label];
+                labels.labels[y][x] = replacements[label];
         }
     }
 }
 
-void computeLabels(Image* img, Labels* labels, int firstLabel)
+void computeLabels(Image& img, Labels& labels, int firstLabel)
 {
-    int width = img->width;
-    int height = img->height;
+    int width = img.width;
+    int height = img.height;
 
     int label = firstLabel, neighbourLabel;
 
@@ -120,10 +120,10 @@ void computeLabels(Image* img, Labels* labels, int firstLabel)
     {
         for (int x = 0; x < width; x++)
         {
-            if(img->pixels[y][x].r == 0)
-                labels->labels[y][x] = label++;
+            if(img.pixels[y][x].r == 0)
+                labels.labels[y][x] = label++;
             else
-                labels->labels[y][x] = -1;
+                labels.labels[y][x] = -1;
         }
     }
 
@@ -133,7 +133,7 @@ void computeLabels(Image* img, Labels* labels, int firstLabel)
     {
         for (int x = 0; x < width; x++)
         {
-            int initialLabelValue = labels->labels[y][x];
+            int initialLabelValue = labels.labels[y][x];
             if (initialLabelValue != -1)
             {
                 std::vector<int> candidates;
@@ -141,15 +141,15 @@ void computeLabels(Image* img, Labels* labels, int firstLabel)
                 {
                     for (int xoffset = (x == 0 ? 0 : -1); xoffset <= (x == width - 1 ? 0 : 1); xoffset++)
                     {
-                        neighbourLabel = labels->labels[y + yoffset][x + xoffset];
+                        neighbourLabel = labels.labels[y + yoffset][x + xoffset];
 
                         if(neighbourLabel != -1)
                         {
                             if (neighbourLabel < initialLabelValue && !Utils::contains<int>(&candidates, neighbourLabel))
                                 candidates.push_back(neighbourLabel);
 
-                            if (neighbourLabel < labels->labels[y][x])
-                                labels->labels[y][x] = neighbourLabel;
+                            if (neighbourLabel < labels.labels[y][x])
+                                labels.labels[y][x] = neighbourLabel;
                         }
                     }
                 }
@@ -167,25 +167,25 @@ void computeLabels(Image* img, Labels* labels, int firstLabel)
     applyAdjacencies(labels, transitiveClosure);
 }
 
-Labels* ConnectedComponents::getLabels(Image* img)
+Labels ConnectedComponents::getLabels(Image& img)
 {
     int firstLabel = 1;
-    Labels* labels = new Labels(img->width, img->height);  
+    Labels labels(img.width, img.height);  
     computeLabels(img, labels, firstLabel);
     return labels;
 }
 
-std::map<int, BoundingBox> ConnectedComponents::getBoundingBoxes(Labels* labels)
+std::map<int, BoundingBox> ConnectedComponents::getBoundingBoxes(Labels& labels)
 {
-    int height = labels->height;
-    int width = labels->width;
+    int height = labels.height;
+    int width = labels.width;
     std::map<int, BoundingBox> boundingBoxes;
 
     for (int y = 0; y < height; y++)
     {
         for(int x = 0; x < width; x++)
         {
-            int label = labels->labels[y][x];
+            int label = labels.labels[y][x];
             if (label != -1)
             {
                 BoundingBox bbox;
@@ -224,12 +224,12 @@ std::map<int, BoundingBox> ConnectedComponents::getBoundingBoxes(Labels* labels)
     return boundingBoxesWithCenter;
 }
 
-Labels* ConnectedComponents::getLabelsParallel(Image* img)
+Labels ConnectedComponents::getLabelsParallel(Image& img)
 {
-    Labels* labels = new Labels(img->width, img->height);
+    Labels labels(img.width, img.height);
 
     int nthreads = omp_get_max_threads();
-    int partSize = img->height / nthreads;
+    int partSize = img.height / nthreads;
 
    #pragma omp parallel
    {
@@ -240,17 +240,17 @@ Labels* ConnectedComponents::getLabelsParallel(Image* img)
         */
 
         Image imgPartition;
-        imgPartition.pixels = &img->pixels[t*partSize];
-        imgPartition.width = img->width;
+        imgPartition.pixels = &img.pixels[t*partSize];
+        imgPartition.width = img.width;
         imgPartition.height = t == nthreads-1 ? 
-            img->height - (partSize * (nthreads-1)) - 1 :
+            img.height - (partSize * (nthreads-1)) - 1 :
             partSize;
 
         Labels labelsPartition;
-        labelsPartition.labels = &labels->labels[t*partSize];
-        labelsPartition.width = labels->width;
+        labelsPartition.labels = &labels.labels[t*partSize];
+        labelsPartition.width = labels.width;
         labelsPartition.height = t == nthreads-1 ? 
-            labels->height - (partSize * (nthreads-1)) - 1 :
+            labels.height - (partSize * (nthreads-1)) - 1 :
             partSize;
 
 
@@ -259,7 +259,16 @@ Labels* ConnectedComponents::getLabelsParallel(Image* img)
         */
 
         int firstLabel = t*partSize + 1;
-        computeLabels(&imgPartition, &labelsPartition, firstLabel);
+        computeLabels(imgPartition, labelsPartition, firstLabel);
+
+        // set fields to zero and nullptr, so that the destructors
+        // don't delete the data from the main image, and labels
+        imgPartition.pixels = nullptr;
+        imgPartition.height = 0;
+        imgPartition.width = 0;
+        labelsPartition.labels = nullptr;
+        labelsPartition.width = 0;
+        labelsPartition.height = 0;
    }
 
     /*
@@ -272,17 +281,17 @@ Labels* ConnectedComponents::getLabelsParallel(Image* img)
     int prevNeighbourLabel = -1;
 
     std::vector<std::vector<int>> interPartAdjacencies;
-    for(int y = partSize-1; y < img->height-partSize; y += partSize)
+    for(int y = partSize-1; y < img.height-partSize; y += partSize)
     {
-        for(int x = 0; x < img->width; x++)
+        for(int x = 0; x < img.width; x++)
         {
-            for(int xoffset = (x == 0 ? 0 : -1); xoffset <= (x == img->width-1 ? 0 : 1); xoffset++)
+            for(int xoffset = (x == 0 ? 0 : -1); xoffset <= (x == img.width-1 ? 0 : 1); xoffset++)
             {
                 int neighbour_x = x+xoffset;
                 int neighbour_y = y+1;
 
-                int label = labels->labels[y][x];
-                int neighbourLabel = labels->labels[neighbour_y][neighbour_x];
+                int label = labels.labels[y][x];
+                int neighbourLabel = labels.labels[neighbour_y][neighbour_x];
 
                 if(label != -1 && neighbourLabel != -1 && label != prevLabel && neighbourLabel != prevNeighbourLabel)
                 {

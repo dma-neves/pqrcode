@@ -12,8 +12,8 @@
 class ImageHandler
 {
 public:
-    virtual Image* readImage(char* file) = 0;
-    virtual void writeImage(Image* image, char* file) = 0;
+    virtual Image readImage(char* file) = 0;
+    virtual void writeImage(Image& image, char* file) = 0;
 };
 
 #endif

@@ -20,7 +20,7 @@
 class QRCodeReader
 {
 public:
-    static std::string read(Image* img);
+    static std::string read(Image& img);
 };
 
 #endif

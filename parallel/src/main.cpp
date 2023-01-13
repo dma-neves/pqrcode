@@ -18,7 +18,7 @@ int main(int argc, char** argv)
 
     try
     {
-        Image* img = im->readImage(argv[1]);
+        Image img = im->readImage(argv[1]);
 
         #ifdef TIME
             auto start = std::chrono::high_resolution_clock::now();
@@ -31,8 +31,6 @@ int main(int argc, char** argv)
         #endif
 
         im->writeImage(img, argv[2]);
-        img->destroy();
-        delete img;
     }
     catch(std::string msg)
     {

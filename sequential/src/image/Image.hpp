@@ -23,13 +23,64 @@ public:
 
     Image(int width, int height) : width(width), height(height)
     {
-        pixels = new Pixel*[height];
+        allocate_pixels(width, height);
+    }
 
-        for(int y = 0; y < height; y++)
-            pixels[y] = new Pixel[width];
+    Image(Image&& image)
+    {
+        pixels = image.pixels;
+        width = image.width;
+        height = image.height;
+
+        image.width = 0;
+        image.height = 0;
+        image.pixels = nullptr;
+    }
+
+    Image(Image& image)
+    {
+        allocate_pixels(image.width, image.height);
+        copy_pixels(image);
+    }
+
+    Image& operator=(Image&& image)
+    {
+        destroy_pixels();
+        pixels = image.pixels;
+        width = image.width;
+        height = image.height;
+
+        image.width = 0;
+        image.height = 0;
+        image.pixels = nullptr;
+
+        return *this;
+    }
+
+    Image& operator=(Image& image)
+    {
+        destroy_pixels();
+        allocate_pixels(image.width, image.height);
+        copy_pixels(image);
+
+        return *this;
     }
 
     ~Image()
+    {
+        destroy_pixels();
+    }
+
+private:
+
+    void copy_pixels(Image& image)
+    {
+        for(int y = 0; y < height; y++)
+            for(int x = 0; x < width; x++)
+                pixels[y][x] = image.pixels[y][x];
+    }
+
+    void destroy_pixels()
     {
         for(int y = 0; y < height; y++)
             delete pixels[y];
@@ -37,31 +88,15 @@ public:
         delete pixels;
     }
 
-    Image* copy()
+    void allocate_pixels(int width, int height)
     {
-        Image* imgCopy = new Image(width, height);
-        //std::memcpy(imgCopy->pixels, pixels, sizeof(Pixel)*width*height);
+        this->width = width;
+        this->height = height;
+
+        pixels = new Pixel*[height];
 
         for(int y = 0; y < height; y++)
-            for(int x = 0; x < width; x++)
-            {
-                imgCopy->pixels[y][x].r = pixels[y][x].r;
-                imgCopy->pixels[y][x].g = pixels[y][x].g;
-                imgCopy->pixels[y][x].b = pixels[y][x].b;
-            }
-
-        return imgCopy;
-    }
-
-    void copyPixels(Image* img)
-    {
-        for(int y = 0; y < height; y++)
-            for(int x = 0; x < width; x++)
-            {
-                pixels[y][x].r = img->pixels[y][x].r;
-                pixels[y][x].g = img->pixels[y][x].g;
-                pixels[y][x].b = img->pixels[y][x].b;
-            }
+            pixels[y] = new Pixel[width];
     }
 };
 

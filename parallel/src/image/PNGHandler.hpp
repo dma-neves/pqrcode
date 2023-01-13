@@ -33,7 +33,7 @@ public:
         free(row_pointers);
     }
 
-    Image* readImage(char* file)
+    Image readImage(char* file)
     {
         // open file and test if png
         unsigned char header[8];
@@ -84,7 +84,7 @@ public:
 
         // Convert to Image
 
-        Image* img = new Image(width, height);
+        Image img(width, height);
         nchan = 0;
         
         if(color_type == PNG_COLOR_TYPE_PALETTE)
@@ -117,9 +117,9 @@ public:
             {
                 png_byte* ptr = &(row[x*nchan]);
 
-                img->pixels[y][x].r = ptr[0];
-                img->pixels[y][x].g = ptr[1];
-                img->pixels[y][x].b = ptr[2];
+                img.pixels[y][x].r = ptr[0];
+                img.pixels[y][x].g = ptr[1];
+                img.pixels[y][x].b = ptr[2];
             }
         }
 
@@ -128,7 +128,7 @@ public:
         return img;
     }
 
-    void writeImage(Image* image, char* file)
+    void writeImage(Image& image, char* file)
     {
         FILE *fp = fopen(file, "wb");
         if (!fp)
@@ -175,9 +175,9 @@ public:
             {
                 png_byte* ptr = &(row[x*nchan]);
 
-                ptr[0] = image->pixels[y][x].r;
-                ptr[1] = image->pixels[y][x].g;
-                ptr[2] = image->pixels[y][x].b;
+                ptr[0] = image.pixels[y][x].r;
+                ptr[1] = image.pixels[y][x].g;
+                ptr[2] = image.pixels[y][x].b;
             }
         }
 

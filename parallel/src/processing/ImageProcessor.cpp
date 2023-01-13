@@ -4,46 +4,46 @@
 #include <math.h>
 #include <omp.h>
 
-void ImageProcessor::negative(Image* img)
+void ImageProcessor::negative(Image& img)
 {
     #pragma omp parallel for
-    for(int y = 0; y < img->height; y++)
+    for(int y = 0; y < img.height; y++)
     {
-        for(int x = 0; x < img->width; x++)
+        for(int x = 0; x < img.width; x++)
         {
-            img->pixels[y][x].r = 255 - img->pixels[y][x].r;
-            img->pixels[y][x].g = 255 - img->pixels[y][x].g;
-            img->pixels[y][x].b = 255 - img->pixels[y][x].b;
+            img.pixels[y][x].r = 255 - img.pixels[y][x].r;
+            img.pixels[y][x].g = 255 - img.pixels[y][x].g;
+            img.pixels[y][x].b = 255 - img.pixels[y][x].b;
         }
     }
 }
 
-void ImageProcessor::convertToBW(Image *img, pcomp threshold)
+void ImageProcessor::convertToBW(Image&img, pcomp threshold)
 {
     #pragma omp parallel for
-    for(int y = 0; y < img->height; y++)
+    for(int y = 0; y < img.height; y++)
     {
-        for(int x = 0; x < img->width; x++)
+        for(int x = 0; x < img.width; x++)
         {
-            pcomp gray = round( (img->pixels[y][x].r + img->pixels[y][x].g + img->pixels[y][x].b) / 3.0 );
+            pcomp gray = round( (img.pixels[y][x].r + img.pixels[y][x].g + img.pixels[y][x].b) / 3.0 );
 
             if(gray <= threshold)
             {
-                img->pixels[y][x].r = 0;
-                img->pixels[y][x].g = 0;
-                img->pixels[y][x].b = 0;
+                img.pixels[y][x].r = 0;
+                img.pixels[y][x].g = 0;
+                img.pixels[y][x].b = 0;
             }
             else
             {
-                img->pixels[y][x].r = 255;
-                img->pixels[y][x].g = 255;
-                img->pixels[y][x].b = 255;
+                img.pixels[y][x].r = 255;
+                img.pixels[y][x].g = 255;
+                img.pixels[y][x].b = 255;
             }
         }
     }
 }
 
-pcomp ImageProcessor::getOtsuTheshold(Image *img)
+pcomp ImageProcessor::getOtsuTheshold(Image&img)
 {
     std::array<int, N_COMP_VALS> hist = histogramGray(img);
     int total_sum = Utils::sumArrayValues<int, N_COMP_VALS>(hist);
@@ -104,7 +104,7 @@ pcomp ImageProcessor::getOtsuTheshold(Image *img)
     return best_var;
 }
 
-std::array<int, N_COMP_VALS> ImageProcessor::histogramGray(Image* img)
+std::array<int, N_COMP_VALS> ImageProcessor::histogramGray(Image& img)
 {
     std::array<int, N_COMP_VALS> hist;
     hist.fill(0);
@@ -115,11 +115,11 @@ std::array<int, N_COMP_VALS> ImageProcessor::histogramGray(Image* img)
         hist_priv.fill(0);
 
         #pragma omp for
-        for(int y = 0; y < img->height; y++)
+        for(int y = 0; y < img.height; y++)
         {
-            for(int x = 0; x < img->width; x++)
+            for(int x = 0; x < img.width; x++)
             {
-                pcomp val = round( (img->pixels[y][x].r + img->pixels[y][x].g + img->pixels[y][x].b) / 3.0 );
+                pcomp val = round( (img.pixels[y][x].r + img.pixels[y][x].g + img.pixels[y][x].b) / 3.0 );
                 hist_priv[val]++;
             }
         }
@@ -134,60 +134,60 @@ std::array<int, N_COMP_VALS> ImageProcessor::histogramGray(Image* img)
     return hist;
 }
 
-void ImageProcessor::rotationAroundPoint(Image* img, Image* copy, double angle, Vector2D center)
+void ImageProcessor::rotationAroundPoint(Image& img, Image& copy, double angle, Vector2D center)
 {
     int origin_x, origin_y;
     double cos_theta = cos(angle);
     double sin_theta = sin(angle);
 
     #pragma omp parallel for private(origin_x,origin_y)
-    for(int y = 0; y < img->height; y++)
+    for(int y = 0; y < img.height; y++)
     {
-        for(int x = 0; x < img->width; x++)
+        for(int x = 0; x < img.width; x++)
         {
             origin_x = (int)round((x - center.x) * cos_theta - (center.y - y) * sin_theta + center.x);
             origin_y = (int)round(center.y - (x - center.x) * sin_theta - (center.y - y) * cos_theta);
 
-            if (origin_x >= 0 && origin_x < img->width && origin_y >= 0 && origin_y < img->height)
+            if (origin_x >= 0 && origin_x < img.width && origin_y >= 0 && origin_y < img.height)
             {
-                img->pixels[y][x].r = copy->pixels[origin_y][origin_x].r;
-                img->pixels[y][x].g = copy->pixels[origin_y][origin_x].g;
-                img->pixels[y][x].b = copy->pixels[origin_y][origin_x].b;
+                img.pixels[y][x].r = copy.pixels[origin_y][origin_x].r;
+                img.pixels[y][x].g = copy.pixels[origin_y][origin_x].g;
+                img.pixels[y][x].b = copy.pixels[origin_y][origin_x].b;
             }
             else
             {
-                img->pixels[y][x].r = 0;
-                img->pixels[y][x].g = 0;
-                img->pixels[y][x].b = 0;
+                img.pixels[y][x].r = 0;
+                img.pixels[y][x].g = 0;
+                img.pixels[y][x].b = 0;
             }
         }
     }
 }
 
-void ImageProcessor::shear(Image* img, Image* copy, double x_shear, double y_shear)
+void ImageProcessor::shear(Image& img, Image& copy, double x_shear, double y_shear)
 {
     int origin_x, origin_y;
 
     #pragma omp parallel for private(origin_x,origin_y)
-    for(int y = 0; y < img->height; y++)
+    for(int y = 0; y < img.height; y++)
     {
-        for(int x = 0; x < img->width; x++)
+        for(int x = 0; x < img.width; x++)
         {
             origin_x = (int)round(x - x_shear*y);
             origin_y = (int)round(y - y_shear*x);
 
-            if (origin_x >= 0 && origin_x < img->width && origin_y >= 0 && origin_y < img->height)
+            if (origin_x >= 0 && origin_x < img.width && origin_y >= 0 && origin_y < img.height)
             {
-                img->pixels[y][x].r = copy->pixels[origin_y][origin_x].r;
-                img->pixels[y][x].g = copy->pixels[origin_y][origin_x].g;
-                img->pixels[y][x].b = copy->pixels[origin_y][origin_x].b;
+                img.pixels[y][x].r = copy.pixels[origin_y][origin_x].r;
+                img.pixels[y][x].g = copy.pixels[origin_y][origin_x].g;
+                img.pixels[y][x].b = copy.pixels[origin_y][origin_x].b;
 
             }
             else
             {
-                img->pixels[y][x].r = 0;
-                img->pixels[y][x].g = 0;
-                img->pixels[y][x].b = 0;
+                img.pixels[y][x].r = 0;
+                img.pixels[y][x].g = 0;
+                img.pixels[y][x].b = 0;
             }
         }
     }

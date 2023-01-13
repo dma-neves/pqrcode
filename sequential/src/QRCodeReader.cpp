@@ -74,7 +74,7 @@ std::array<BoundingBox,3> getPositioningBlocks(std::map<int, BoundingBox> bboxes
 	return positioningBlocks;
 }
 
-Image* cropImage(std::array<BoundingBox,3> positioningBlocks, Image* img)
+Image cropImage(std::array<BoundingBox,3> positioningBlocks, Image& img)
 {
 	const int PADDING = 2;
 
@@ -85,15 +85,15 @@ Image* cropImage(std::array<BoundingBox,3> positioningBlocks, Image* img)
 
 	int longestDim = std::max((right - left), (bottom - top));
 
-	Image* croppedImg = new Image(longestDim, longestDim);
+	Image croppedImg(longestDim, longestDim);
 
-	for(int y = 0; y < croppedImg->height; y++)
+	for(int y = 0; y < croppedImg.height; y++)
 	{
-		for(int x = 0; x < croppedImg->width; x++)
+		for(int x = 0; x < croppedImg.width; x++)
 		{
-			croppedImg->pixels[y][x].r = img->pixels[y+top][x+left].r;
-			croppedImg->pixels[y][x].g = img->pixels[y+top][x+left].g;
-			croppedImg->pixels[y][x].b = img->pixels[y+top][x+left].b;
+			croppedImg.pixels[y][x].r = img.pixels[y+top][x+left].r;
+			croppedImg.pixels[y][x].g = img.pixels[y+top][x+left].g;
+			croppedImg.pixels[y][x].b = img.pixels[y+top][x+left].b;
 		}
 	}
 
@@ -162,7 +162,7 @@ QRPos getQRPositioning(std::array<BoundingBox, 3> positioningBlocks)
 	return getQRPositioningRec(positioningBlocks, POSITIONING_BLOCKS_DIST_MARGIN, false, 1);
 }
 
-pcomp moduleValue(Image* img, int left, int right, int top, int bottom)
+pcomp moduleValue(Image& img, int left, int right, int top, int bottom)
 {
 	/*
 		Determine module value by calculating the mode in the
@@ -184,7 +184,7 @@ pcomp moduleValue(Image* img, int left, int right, int top, int bottom)
 	{
 		for(int x = xstart; x <= xend; x++)
 		{
-			if(img->pixels[y][x].r == 0)
+			if(img.pixels[y][x].r == 0)
 				zeroCount++;
 			else
 				oneCount++;
@@ -194,7 +194,7 @@ pcomp moduleValue(Image* img, int left, int right, int top, int bottom)
 	return (oneCount > zeroCount ? 1 : 0);
 }
 
-std::string getBinaryCode(Image* img, int left, int right, int top, int bottom)
+std::string getBinaryCode(Image& img, int left, int right, int top, int bottom)
 {
 	std::ostringstream os;
 
@@ -257,10 +257,10 @@ std::string getBinaryCode(Image* img, int left, int right, int top, int bottom)
 	return os.str();
 }
 
-std::string QRCodeReader::read(Image* img)
+std::string QRCodeReader::read(Image& img)
 {
 	int left = 0, top = 0, right = 0, bottom = 0;
-	Image* auxImg = img->copy();
+	Image auxImg = img;
 
 
 	/* Binarize image */
@@ -269,7 +269,7 @@ std::string QRCodeReader::read(Image* img)
 
 	/* Run connected components algorithm */
 
-	Labels* labels = ConnectedComponents::getLabels(auxImg);
+	Labels labels = ConnectedComponents::getLabels(auxImg);
 	std::map<int, BoundingBox> bboxes = ConnectedComponents::getBoundingBoxes(labels);
 	try
 	{
@@ -282,9 +282,8 @@ std::string QRCodeReader::read(Image* img)
 			in the region of the QR code. Convert original image to black
 			and white using this threshold  
 		*/
-		Image* croppedImage = cropImage(positioningBlocks, img);
+		Image croppedImage = cropImage(positioningBlocks, img);
 		pcomp threshold = ImageProcessor::getOtsuTheshold(croppedImage);
-		delete croppedImage;
 		if(abs(100-threshold) > 50) threshold = 100;
 		ImageProcessor::convertToBW(img, threshold);
 
@@ -293,7 +292,7 @@ std::string QRCodeReader::read(Image* img)
 		QRPos qrpos = getQRPositioning(positioningBlocks);
 		QRPos qrposTransformed = qrpos;
 
-		Image* copy = img->copy();
+		Image copy = img;
 
 		/* Get rotation angle (so that the QR code is correctly positioned) and rotate image */
 
@@ -313,7 +312,7 @@ std::string QRCodeReader::read(Image* img)
 		{
 			/* Perform shear */
 
-			copy->copyPixels(img);
+			copy = img;
 			double x_shear = -qrposTransformed.downVec.x / qrposTransformed.downVec.y;
 			ImageProcessor::shear(img, copy, x_shear, 0);
 			qrposTransformed.ul = qrposTransformed.ul.shear(x_shear, 0);
@@ -326,7 +325,6 @@ std::string QRCodeReader::read(Image* img)
 			//qrposTransformed.center = ...;
 		}
 
-		delete copy;
 
 		double positioningBlocksDistance = qrposTransformed.rightVec.norm();
 		double moduleSize = positioningBlocksDistance / 14.0;
@@ -341,8 +339,6 @@ std::string QRCodeReader::read(Image* img)
 		std::cerr << "Exception: " << msg << std::endl;
 	}
 
-	delete labels;
-	delete auxImg;
 
 	return (left != right && bottom != top) ? getBinaryCode(img, left, right, top, bottom) : "";
 }
